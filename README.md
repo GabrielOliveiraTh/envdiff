@@ -4,7 +4,6 @@ Checks that your `.env` has the same keys as `.env.example`, and fails when it d
 
 [![CI](https://github.com/GabrielOliveiraTh/envdiff/actions/workflows/ci.yml/badge.svg)](https://github.com/GabrielOliveiraTh/envdiff/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/GabrielOliveiraTh/envdiff)](https://github.com/GabrielOliveiraTh/envdiff/releases/latest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/GabrielOliveiraTh/envdiff)](https://goreportcard.com/report/github.com/GabrielOliveiraTh/envdiff)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Someone adds a variable to `.env.example`, and your `.env` (or the one in CI or staging) never gets it.
