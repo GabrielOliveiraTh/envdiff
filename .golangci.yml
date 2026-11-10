@@ -1,0 +1,39 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - revive
+    - gosec
+    - misspell
+    - unused
+    - ineffassign
+    - gocritic
+  exclusions:
+    generated: lax
+    rules:
+      # The CLI intentionally opens user-supplied file paths (--env / --file).
+      - path: internal/cli/
+        linters:
+          - gosec
+        text: "G304"
+      # Tests may use relaxed file permissions and ignore some errors.
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/GabrielOliveiraTh/envdiff

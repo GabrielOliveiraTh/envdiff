@@ -1,0 +1,11 @@
+# Normalize line endings so golden files and fixtures are byte-stable on every OS.
+* text=auto
+*.go text eol=lf
+*.golden text eol=lf
+*.env text eol=lf
+*.env.example text eol=lf
+testdata/** text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+Makefile text eol=lf
