@@ -1,17 +1,17 @@
 # envdiff
 
-Compare the keys of `.env.example` and `.env` and fail CI when they drift. Never reads or prints values.
+Checks that your `.env` has the same keys as `.env.example`, and fails when it doesn't.
 
 [![CI](https://github.com/GabrielOliveiraTh/envdiff/actions/workflows/ci.yml/badge.svg)](https://github.com/GabrielOliveiraTh/envdiff/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/GabrielOliveiraTh/envdiff)](https://github.com/GabrielOliveiraTh/envdiff/releases/latest)
 [![Go Report Card](https://goreportcard.com/badge/github.com/GabrielOliveiraTh/envdiff)](https://goreportcard.com/report/github.com/GabrielOliveiraTh/envdiff)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## The problem
+Someone adds a variable to `.env.example`, and your `.env` (or the one in CI or staging) never gets it.
+The app boots fine and then breaks at runtime, far from the cause.
+`envdiff` catches that early and returns an exit code you can use in CI or a git hook.
 
-Someone adds a variable to `.env.example` and your `.env` (or the CI/staging one) never gets it.
-The app starts, then fails at runtime far from the cause.
-`envdiff` catches the drift up front, with an exit code for CI and git hooks, and it never touches your secrets: only key names and line numbers are ever read into the report.
+It only looks at key names. Values are never printed, logged or kept in the results, so it's safe to run where logs are public.
 
 ## Usage
 
@@ -38,115 +38,71 @@ Comparing .env against .env.example
 Result: FAIL (2 missing, 1 empty, 1 extra, 1 duplicate)
 ```
 
-The process exits with status 1. A clean run prints a single line and exits 0 (here `envdiff -f ok.env`, where `ok.env` has the same keys):
+That run exits with 1. When everything matches you get one line and exit 0:
 
 ```text
 ✓ ok.env matches .env.example (6 keys)
 ```
 
-## Installation
+## Install
 
 ```sh
 go install github.com/GabrielOliveiraTh/envdiff/cmd/envdiff@latest
 ```
 
-Or download a prebuilt binary for Linux, macOS or Windows from the
-[GitHub Releases](https://github.com/GabrielOliveiraTh/envdiff/releases) page.
+Or grab a binary for Linux, macOS or Windows from the [Releases](https://github.com/GabrielOliveiraTh/envdiff/releases) page.
 
 ## Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `-e`, `--example <path>` | `.env.example` | Reference file. |
-| `-f`, `--env <path>` | `.env` | File to check against the reference. |
-| `--format text\|json\|github` | `text` | Output format. |
-| `--ignore <pattern>` | none | `path.Match` glob on key names, e.g. `'LOCAL_*'`. Repeatable. Applies to every category (missing, extra, empty, duplicates) and to the key count. |
-| `--check-empty` | off | Also report keys present in both files whose value in `--env` is empty. |
-| `--strict` | off | Extra and duplicate findings also fail the run. |
-| `-q`, `--quiet` | off | Print nothing to stdout; only the exit code. |
-| `--no-color` | off | Disable colors. |
-| `--version` | | Print version, commit and build date. |
+| Flag | Default | What it does |
+|------|---------|--------------|
+| `-e`, `--example <path>` | `.env.example` | Reference file |
+| `-f`, `--env <path>` | `.env` | File to check |
+| `--format text\|json\|github` | `text` | Output format |
+| `--ignore <pattern>` | | Skip keys matching a glob (`'LOCAL_*'`). Repeatable |
+| `--check-empty` | off | Also flag keys that exist in both files but are empty in `--env` |
+| `--strict` | off | Make extra and duplicate keys fail too |
+| `-q`, `--quiet` | off | No output, just the exit code |
+| `--no-color` | off | Turn colors off |
+| `--version` | | Print version, commit and build date |
 
-Colors are used only with `--format text`, only when stdout is a terminal, `NO_COLOR` is unset or empty and `--no-color` was not passed. Legacy Windows consoles without ANSI support may show raw escape codes; pass `--no-color` there.
+`--ignore` uses Go's `path.Match` syntax and applies to every kind of finding.
+
+Colors only show up with the text format, when stdout is a terminal, `NO_COLOR` isn't set and you didn't pass `--no-color`. Very old Windows consoles may print raw escape codes, so use `--no-color` there.
 
 ## Exit codes
 
 | Code | Meaning |
 |------|---------|
-| `0` | No failing findings. |
-| `1` | Differences found. |
-| `2` | Usage error, file read error or dotenv syntax error. |
+| `0` | Nothing that fails the run |
+| `1` | Differences found |
+| `2` | Bad usage, unreadable file, or syntax error in a dotenv file |
 
-What fails the run: missing keys always; empty keys (only with `--check-empty`); extra keys and duplicates are warnings and fail only with `--strict`.
-Errors go to stderr prefixed with `envdiff: `; the report goes to stdout.
+Missing keys always fail. Empty keys fail (only checked with `--check-empty`). Extra and duplicate keys are warnings, and only fail with `--strict`.
+The report goes to stdout. Errors go to stderr, prefixed with `envdiff: `.
 
 ## Output formats
 
-### text
+**text** is the default, shown above. If there are only warnings, the last line is `Result: OK with warnings (...)`.
 
-The default, shown above. With only warnings the result line reads `Result: OK with warnings (1 extra, 1 duplicate)`.
-
-### json
-
-The JSON document is a public contract.
+**json** is a stable schema, so you can build on it:
 
 ```json
 {
   "example": ".env.example",
   "env": ".env",
-  "missing": [
-    {
-      "key": "DATABASE_URL",
-      "line": 4
-    },
-    {
-      "key": "REDIS_URL",
-      "line": 6
-    }
-  ],
-  "extra": [
-    {
-      "key": "OLD_FLAG",
-      "line": 5
-    }
-  ],
-  "empty": [
-    {
-      "key": "API_KEY",
-      "line": 3
-    }
-  ],
-  "duplicates": [
-    {
-      "file": ".env",
-      "key": "PORT",
-      "lines": [
-        2,
-        6
-      ]
-    }
-  ],
+  "missing": [{ "key": "DATABASE_URL", "line": 4 }],
+  "extra": [{ "key": "OLD_FLAG", "line": 5 }],
+  "empty": [{ "key": "API_KEY", "line": 3 }],
+  "duplicates": [{ "file": ".env", "key": "PORT", "lines": [2, 6] }],
   "key_count": 6,
   "ok": false
 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `example` | string | Path of the reference file. |
-| `env` | string | Path of the checked file. |
-| `missing` | array of `{key, line}` | In the reference, absent from env. `line` is in the reference file. |
-| `extra` | array of `{key, line}` | In env, absent from the reference. `line` is in env. |
-| `empty` | array of `{key, line}` | Present in both, empty in env (only with `--check-empty`). `line` is in env. |
-| `duplicates` | array of `{file, key, lines}` | Keys defined more than once in a file. `lines` lists every line, ascending. Covers both files. |
-| `key_count` | integer | Number of reference keys after `--ignore`. |
-| `ok` | boolean | `true` when the exit code would be 0. |
+(The real output is indented one field per line.) `line` in `missing` points into the reference file; in `extra` and `empty` it points into the env file. `key_count` is the number of reference keys after `--ignore`. Lists are always arrays, never `null`, and sorted by key. `ok` is true when the exit code would be 0.
 
-Lists are always arrays, never `null`. Findings are sorted by key. The `--strict` setting is not serialized; it is reflected only in `ok`.
-
-### github
-
-Emits one [workflow command](https://docs.github.com/actions/reference/workflow-commands-for-github-actions) per finding, so they show as annotations on the file and line. Nothing is printed when there are no findings.
+**github** prints one [workflow command](https://docs.github.com/actions/reference/workflow-commands-for-github-actions) per finding, so they show up as annotations on the files:
 
 ```text
 ::error file=.env.example,line=4::Missing key DATABASE_URL in .env
@@ -156,115 +112,76 @@ Emits one [workflow command](https://docs.github.com/actions/reference/workflow-
 ::warning file=.env,line=2::Duplicate key PORT (lines 2, 6)
 ```
 
-With `--strict`, extra and duplicate findings are emitted as `::error` instead of `::warning`.
+With `--strict`, the warnings become errors.
 
 ## Recipes
 
-### GitHub Actions
+GitHub Actions (install the binary first, e.g. with `go install`):
 
 ```yaml
 - name: Check env keys
   run: envdiff --example .env.example --env .env.ci --format github
 ```
 
-Install the binary first, for example with `go install github.com/GabrielOliveiraTh/envdiff/cmd/envdiff@latest`.
-
-### Git pre-commit hook
-
-`.git/hooks/pre-commit` (make it executable):
+Git pre-commit hook (`.git/hooks/pre-commit`, make it executable):
 
 ```sh
 #!/bin/sh
 envdiff --quiet || { envdiff; exit 1; }
 ```
 
-Or with [pre-commit](https://pre-commit.com):
-
-```yaml
-repos:
-  - repo: local
-    hooks:
-      - id: envdiff
-        name: envdiff
-        entry: envdiff
-        language: system
-        pass_filenames: false
-```
-
-### Makefile
+Makefile:
 
 ```make
-.PHONY: env-check
 env-check:
 	envdiff --check-empty
 ```
 
-## Supported parsing rules
+## What the parser accepts
 
-The parser is strict (see [ADR 0002](docs/adr/0002-strict-dotenv-parsing.md)). It extracts keys and an "empty" flag; values are never stored.
+It's deliberately strict: a line it can't understand is an error (exit 2), not something to skip silently. See [ADR 0002](docs/adr/0002-strict-dotenv-parsing.md).
 
-1. Input is UTF-8; a leading BOM is stripped; `\n` and `\r\n` line endings are accepted.
-2. Blank lines and lines starting with `#` are ignored. Only `\n` and `\r\n` end a line; a lone `\r` does not.
-3. An optional `export` prefix (followed by spaces or tabs) is dropped. `export=1` is a key named `export`.
-4. Keys must match `^[A-Za-z_][A-Za-z0-9_.]*$`; anything else is a syntax error.
-5. Whitespace around `=` is tolerated. A non-comment line without `=` is a syntax error.
-6. Unquoted values run to the end of the line; an inline comment starts at ` #` (a `#` preceded by whitespace).
-7. Single-quoted values are literal and may span multiple lines.
-8. Double-quoted values support the escapes `\n`, `\r`, `\t`, `\"` and `\\`, and may span multiple lines. Unknown escapes (such as `\q`) are kept literally and are not an error.
-9. After a closing quote only spaces and a `#` comment may follow.
-10. An unclosed quote is an error reported at the line where the quote started.
-11. Empty values: `KEY=`, `KEY=""`, `KEY=''` and `KEY= # comment` are all empty.
-12. A repeated key is reported as a duplicate; the last occurrence wins.
-13. No interpolation: `${VAR}` and `$VAR` are plain text.
-14. The parser stops at the first error.
-15. It never panics, including on invalid UTF-8 (covered by a fuzz test).
-16. Error messages contain only `path:line: message`, never a value.
+- `KEY=value`, with an optional `export ` in front. Keys match `[A-Za-z_][A-Za-z0-9_.]*`.
+- Blank lines and `#` comment lines are ignored. Unquoted values can have an inline ` # comment`.
+- Single quotes are literal. Double quotes understand `\n`, `\r`, `\t`, `\"` and `\\`. Both can span several lines.
+- After a closing quote, only spaces or a comment may follow. An unclosed quote is an error that points at the line where it started.
+- `KEY=`, `KEY=""`, `KEY=''` and `KEY= # note` all count as empty.
+- A repeated key isn't an error: the last one wins, and it's reported as a duplicate.
+- No interpolation: `${VAR}` is just text.
+- UTF-8, with or without BOM; `\n` and `\r\n` line endings.
+- Error messages never include values. The parser never panics (there's a fuzz test for that).
 
 ## Design decisions
 
-- [ADR 0001: Compare keys only, never values](docs/adr/0001-keys-only-never-values.md)
-- [ADR 0002: Strict dotenv parsing](docs/adr/0002-strict-dotenv-parsing.md)
+- [ADR 0001: keys only, never values](docs/adr/0001-keys-only-never-values.md)
+- [ADR 0002: strict dotenv parsing](docs/adr/0002-strict-dotenv-parsing.md)
 
-Out of scope: value comparison, interpolation, fixing or syncing files, more than two files, a config file of its own.
+Not planned: comparing values, `${VAR}` interpolation, fixing or syncing files, more than two files, a config file.
 
 ## Contributing
 
 ```sh
 make test    # go test -race ./...
-make lint    # golangci-lint run
+make lint    # golangci-lint
+make cover   # coverage
 make fuzz    # fuzz the parser for 30s
-make cover   # coverage report
 ```
 
-Golden files for the reporters are regenerated with:
+Reporter golden files are regenerated with `go test ./internal/report/ -update`.
 
-```sh
-go test ./internal/report/ -update
-```
-
-Package layout; dependencies point in one direction:
-
-```text
-cmd/envdiff -> internal/cli -> internal/report -> internal/diff -> internal/envfile
-```
-
-- `envfile`: strict parser; keeps keys, lines and an empty flag.
-- `diff`: pure comparison producing the `Result` (also the JSON schema).
-- `report`: text, json and github renderers.
-- `cli`: flags, file loading, exit codes.
+The packages depend on each other in one direction: `cli` → `report` → `diff` → `envfile`.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
 
 ## Open decisions
 
-Choices made where the specification was ambiguous:
+Places where I had to pick something:
 
-- Duplicate keys are reported for both files (reference and env), each labelled with its file.
-- `empty` is evaluated only for keys present in both files; a missing key is never also reported as empty.
-- The `Result:` line labels are not pluralized (`2 missing, 1 extra, 1 duplicate`).
-- `NO_COLOR`: colors are disabled when the variable is set to a non-empty value (per no-color.org; a defined-but-empty value is ignored); `--no-color` does the same.
-- Unknown escape sequences in double quotes are kept literally instead of raising an error.
-- The parser stops at the first syntax error rather than collecting all of them.
-- GitHub Action versions in the workflows could not be verified at authoring time because the network was blocked: `actions/checkout@v5`, `actions/setup-go@v6`, `actions/upload-artifact@v4`, `golangci/golangci-lint-action@v8`, `goreleaser/goreleaser-action@v6`.
+- Duplicates are reported for both files. `empty` only applies to keys present in both.
+- The `Result:` labels aren't pluralized (`2 missing, 1 extra, 3 duplicate`).
+- `NO_COLOR` only counts when it's set to a non-empty value.
+- Unknown escapes in double quotes (like `\q`) are kept as-is instead of failing. A lone `\r` doesn't end a line.
+- The parser stops at the first error.
+- I couldn't check the GitHub Action versions when writing the workflows (no network), so please verify them: `actions/checkout@v5`, `actions/setup-go@v6`, `actions/upload-artifact@v4`, `golangci/golangci-lint-action@v8`, `goreleaser/goreleaser-action@v6`.
