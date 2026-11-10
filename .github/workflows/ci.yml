@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: true
+      - name: Vet
+        shell: bash
+        run: go vet ./...
+      - name: Test
+        shell: bash
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Coverage gate (internal/... >= 85%)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Keep only internal/ packages in the profile (first line is the mode header).
+          { head -n1 coverage.out; grep '/internal/' coverage.out; } > internal.out
+          total=$(go tool cover -func=internal.out | awk '/^total:/ {gsub("%","",$3); print $3}')
+          echo "internal/... coverage: ${total}%"
+          awk -v t="$total" 'BEGIN { exit !(t+0 >= 85.0) }' || { echo "coverage ${total}% is below 85%"; exit 1; }
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.15
+
+  dogfood:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: true
+      - name: Build
+        run: go build -o envdiff ./cmd/envdiff
+      - name: Run against testdata and assert exit codes
+        shell: bash
+        run: |
+          set +e
+          expect() {
+            want=$1; shift
+            "$@" >/dev/null 2>&1
+            code=$?
+            if [ "$code" -ne "$want" ]; then
+              echo "FAIL: '$*' exited $code, expected $want"
+              exit 1
+            fi
+            echo "ok: '$*' -> $code"
+          }
+          expect 0 ./envdiff -e testdata/ok.env.example -f testdata/ok.env
+          expect 1 ./envdiff -e testdata/fail.env.example -f testdata/fail.env
+          expect 2 ./envdiff -e testdata/ok.env.example -f testdata/bad.env
