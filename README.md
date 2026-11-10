@@ -67,7 +67,7 @@ Or download a prebuilt binary for Linux, macOS or Windows from the
 | `--no-color` | off | Disable colors. |
 | `--version` | | Print version, commit and build date. |
 
-Colors are used only with `--format text`, only when stdout is a terminal, `NO_COLOR` is unset or empty and `--no-color` was not passed.
+Colors are used only with `--format text`, only when stdout is a terminal, `NO_COLOR` is unset or empty and `--no-color` was not passed. Legacy Windows consoles without ANSI support may show raw escape codes; pass `--no-color` there.
 
 ## Exit codes
 
@@ -204,7 +204,7 @@ env-check:
 The parser is strict (see [ADR 0002](docs/adr/0002-strict-dotenv-parsing.md)). It extracts keys and an "empty" flag; values are never stored.
 
 1. Input is UTF-8; a leading BOM is stripped; `\n` and `\r\n` line endings are accepted.
-2. Blank lines and lines starting with `#` are ignored.
+2. Blank lines and lines starting with `#` are ignored. Only `\n` and `\r\n` end a line; a lone `\r` does not.
 3. An optional `export` prefix (followed by spaces or tabs) is dropped. `export=1` is a key named `export`.
 4. Keys must match `^[A-Za-z_][A-Za-z0-9_.]*$`; anything else is a syntax error.
 5. Whitespace around `=` is tolerated. A non-comment line without `=` is a syntax error.
