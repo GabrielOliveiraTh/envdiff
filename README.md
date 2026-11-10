@@ -174,14 +174,3 @@ The packages depend on each other in one direction: `cli` → `report` → `diff
 ## License
 
 MIT, see [LICENSE](LICENSE).
-
-## Open decisions
-
-Places where I had to pick something:
-
-- Duplicates are reported for both files. `empty` only applies to keys present in both.
-- The `Result:` labels aren't pluralized (`2 missing, 1 extra, 3 duplicate`).
-- `NO_COLOR` only counts when it's set to a non-empty value.
-- Unknown escapes in double quotes (like `\q`) are kept as-is instead of failing. A lone `\r` doesn't end a line.
-- The parser stops at the first error.
-- I couldn't check the GitHub Action versions when writing the workflows (no network), so please verify them: `actions/checkout@v5`, `actions/setup-go@v6`, `actions/upload-artifact@v4`, `golangci/golangci-lint-action@v8`, `goreleaser/goreleaser-action@v6`.
