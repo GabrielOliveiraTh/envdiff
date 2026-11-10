@@ -1,0 +1,10 @@
+/envdiff
+/bin/
+/dist/
+*.out
+coverage.*
+.env
+!testdata/**/.env
+.DS_Store
+.idea/
+.vscode/
