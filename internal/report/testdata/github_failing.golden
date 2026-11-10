@@ -1,0 +1,3 @@
+::error file=.env.example,line=3::Missing key DATABASE_URL in .env
+::error file=.env.example,line=8::Missing key REDIS_URL in .env
+::warning file=.env,line=7::Extra key OLD_FLAG not present in .env.example

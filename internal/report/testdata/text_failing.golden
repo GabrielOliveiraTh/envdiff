@@ -1,0 +1,10 @@
+Comparing .env against .env.example
+
+✗ Missing in .env (2):
+  - DATABASE_URL  (.env.example:3)
+  - REDIS_URL     (.env.example:8)
+
+! Extra in .env (1):
+  - OLD_FLAG  (.env:7)
+
+Result: FAIL (2 missing, 1 extra)

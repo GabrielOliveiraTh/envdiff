@@ -18,5 +18,14 @@ type Options struct{ Color bool }
 
 // New returns the Reporter for format ("text", "json" or "github").
 func New(format string, opts Options) (Reporter, error) {
-	return nil, fmt.Errorf("unknown format %q", format)
+	switch format {
+	case "text":
+		return textReporter{color: opts.Color}, nil
+	case "json":
+		return jsonReporter{}, nil
+	case "github":
+		return githubReporter{}, nil
+	default:
+		return nil, fmt.Errorf("unknown format %q (valid: text, json, github)", format)
+	}
 }

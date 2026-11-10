@@ -1,0 +1,10 @@
+{
+  "example": ".env.example",
+  "env": ".env",
+  "missing": [],
+  "extra": [],
+  "empty": [],
+  "duplicates": [],
+  "key_count": 12,
+  "ok": true
+}

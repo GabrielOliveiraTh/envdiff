@@ -1,0 +1,16 @@
+Comparing .env against .env.example
+
+[31m✗ Missing in .env (2):[0m
+  - DATABASE_URL  (.env.example:3)
+  - REDIS_URL     (.env.example:8)
+
+[31m✗ Empty in .env (1):[0m
+  - API_KEY  (.env:2)
+
+[33m! Extra in .env (1):[0m
+  - OLD_FLAG  (.env:7)
+
+[33m! Duplicate keys (1):[0m
+  - PORT  (.env: lines 3, 9)
+
+[31mResult: FAIL (2 missing, 1 empty, 1 extra, 1 duplicate)[0m

@@ -1,0 +1,24 @@
+{
+  "example": ".env.example",
+  "env": ".env",
+  "missing": [
+    {
+      "key": "DATABASE_URL",
+      "line": 3
+    },
+    {
+      "key": "REDIS_URL",
+      "line": 8
+    }
+  ],
+  "extra": [
+    {
+      "key": "OLD_FLAG",
+      "line": 7
+    }
+  ],
+  "empty": [],
+  "duplicates": [],
+  "key_count": 12,
+  "ok": false
+}

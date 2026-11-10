@@ -1,0 +1,5 @@
+::error file=.env.example,line=3::Missing key DATABASE_URL in .env
+::error file=.env.example,line=8::Missing key REDIS_URL in .env
+::error file=.env,line=2::Empty value for key API_KEY in .env
+::warning file=.env,line=7::Extra key OLD_FLAG not present in .env.example
+::warning file=.env,line=3::Duplicate key PORT (lines 3, 9)

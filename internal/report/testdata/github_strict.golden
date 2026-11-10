@@ -1,0 +1,2 @@
+::error file=.env,line=7::Extra key OLD_FLAG not present in .env.example
+::error file=.env,line=3::Duplicate key PORT (lines 3, 9)

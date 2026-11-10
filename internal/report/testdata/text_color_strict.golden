@@ -1,0 +1,9 @@
+Comparing .env against .env.example
+
+[31m! Extra in .env (1):[0m
+  - OLD_FLAG  (.env:7)
+
+[31m! Duplicate keys (1):[0m
+  - PORT  (.env: lines 3, 9)
+
+[31mResult: FAIL (1 extra, 1 duplicate)[0m
