@@ -337,6 +337,7 @@ func TestNeverPrintsValues(t *testing.T) {
 		{"-e", fx("ok.env.example"), "-f", fx("missing.env")},
 		{"-e", fx("ok.env.example"), "-f", fx("bad.env")},
 		{"-e", fx("ok.env.example"), "-f", fx("bad_unclosed.env")},
+		{"-e", fx("ok.env.example"), "-f", fx("badkey.env")},
 		{"-e", fx("bad_unclosed.env"), "-f", fx("ok.env")},
 		append([]string{"--format", "nope"}, ok...),
 		append([]string{"--ignore", "["}, ok...),
